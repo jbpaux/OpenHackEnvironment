@@ -1,0 +1,333 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location of Azure Resouces to deploy"
+            }
+        },
+        "vmSize": {
+            "type": "string",
+            "defaultValue": "Standard_D8_v3",
+            "metadata": {
+                "description": "Size of the VM to create"
+            }
+        },
+        "adminUsername": {
+            "type": "string",
+            "metadata": {
+                "description": "Username of the administrator account of the VM"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Password of the administrator account of the VM"
+            }
+        },
+        "enableAutoShutDown": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Whether or not enable autoshutdown feature"
+            }
+        },
+        "authoShutDownHour": {
+            "type": "string",
+            "defaultValue": "20:00",
+            "metadata": {
+                "description": "Hour for autoshutdown (24h format HH:mm)"
+            }
+        },
+        "autoShutDownTimeZone": {
+            "type": "string",
+            "defaultValue": "Romance Standard Time",
+            "metadata": {
+                "description": "Timezone ID to use (use Get-TimeZone to get your timezone)"
+            }
+        },
+        "autoShutDownNotificationEmail": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Email address for autoshutdown notification (disabled if empty)"
+            }
+        },
+        "dnsprefix": {
+            "type": "string",
+            "metadata": {
+                "description": "DNS Prefix for the Public IP xxxx.region.cloudapp.azure.com"
+            }
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "The location of resources, such as templates and DSC modules, that the template depends on"
+            },
+            "defaultValue": "[deployment().properties.templateLink.uri]"
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Auto-generated token to access _artifactsLocation. Leave it blank unless you need to provide your own value."
+            },
+            "defaultValue": ""
+        }
+    },
+    "functions": [],
+    "variables": {
+        "resourcePrefix": "openhack",
+        "resourceSuffixes": {
+            "publicIPAddress": "pip",
+            "virtualNetwork": "vnet",
+            "virtualMachine": "vm",
+            "networkInterface": "nic",
+            "disk": "osdisk",
+            "networkSecurityGroup": "nsg",
+            "subnet": "sub"
+        },
+        "vmImage": {
+            "publisher": "MicrosoftWindowsDesktop",
+            "offer": "Windows-10",
+            "sku": "20h2-ent",
+            "version": "latest"
+        },
+        "addressSpace": "10.0.0.0/16",
+        "subnet": "10.0.0.0/24",
+        "storageAccountType": "StandardSSD_LRS",
+        "resourceNames": {
+            "publicIPAddress": "[format('{0}-{1}',variables('resourcePrefix'),variables('resourceSuffixes').publicIPAddress)]",
+            "virtualNetwork": "[format('{0}-{1}',variables('resourcePrefix'),variables('resourceSuffixes').virtualNetwork)]",
+            "virtualMachine": "[format('{0}-{1}',variables('resourcePrefix'),variables('resourceSuffixes').virtualMachine)]",
+            "networkInterface": "[format('{0}-{1}',variables('resourcePrefix'),variables('resourceSuffixes').networkInterface)]",
+            "disk": "[format('{0}-{1}',variables('resourcePrefix'),variables('resourceSuffixes').disk)]",
+            "networkSecurityGroup": "[format('{0}-{1}',variables('resourcePrefix'),variables('resourceSuffixes').networkSecurityGroup)]",
+            "subnet": "[format('{0}-{1}',variables('resourcePrefix'),variables('resourceSuffixes').subnet)]"
+        },
+        "resourceIds": {
+            "publicIPAddress": "[resourceId('Microsoft.Network/publicIPAddresses', variables('resourceNames').publicIPAddress)]",
+            "virtualNetwork": "[resourceId('Microsoft.Network/virtualNetworks', variables('resourceNames').virtualNetwork)]",
+            "virtualMachine": "[resourceId('Microsoft.Compute/virtualMachines', variables('resourceNames').virtualMachine)]",
+            "networkInterface": "[resourceId('Microsoft.Network/networkInterfaces', variables('resourceNames').networkInterface)]",
+            "networkSecurityGroup": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('resourceNames').networkSecurityGroup)]",
+            "subnet": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('resourceNames').virtualNetwork, variables('resourceNames').subnet)]"
+        }
+    },
+    "resources": [
+        {
+            "name": "[variables('resourceNames').publicIPAddress]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2020-06-01",
+            "location": "[parameters('location')]",
+            "tags": {
+                "displayName": "VM Public IP"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('dnsprefix')]"
+                }
+            }
+        },
+        {
+            "name": "[variables('resourceNames').networkSecurityGroup]",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2020-06-01",
+            "location": "[parameters('location')]",
+            "tags": {
+                "displayName": "VM NSG"
+            },
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "RDP",
+                        "properties": {
+                            "description": "RDP Access",
+                            "protocol": "*",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "3389",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 100,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[variables('resourceNames').virtualNetwork]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-06-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[variables('resourceIds').networkSecurityGroup]"
+            ],
+            "tags": {
+                "displayName": "VM Virtual Network"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('addressSpace')]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('resourceNames').subnet]",
+                        "properties": {
+                            "addressPrefix": "[variables('subnet')]",
+                            "networkSecurityGroup": {
+                                "id": "[variables('resourceIds').networkSecurityGroup]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[variables('resourceNames').networkInterface]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-06-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[variables('resourceIds').publicIPAddress]",
+                "[variables('resourceIds').virtualNetwork]"
+            ],
+            "tags": {
+                "displayName": "VM Network Interface"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipConfig",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[variables('resourceIds').publicIPAddress]"
+                            },
+                            "subnet": {
+                                "id": "[variables('resourceIds').subnet]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[variables('resourceNames').virtualMachine]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2020-06-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[variables('resourceIds').networkInterface]"
+            ],
+            "tags": {
+                "displayName": "VM"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[variables('resourceNames').virtualMachine]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": "[variables('vmImage')]",
+                    "osDisk": {
+                        "name": "[variables('resourceNames').disk]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "[variables('storageAccountType')]"
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[variables('resourceIds').networkInterface]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true
+                    }
+                }
+            }
+        },
+        {
+            "name": "[concat('shutdown-computevm-',variables('resourceNames').virtualMachine)]",
+            "type": "Microsoft.DevTestLab/schedules",
+            "apiVersion": "2018-09-15",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[variables('resourceIds').virtualMachine]"
+            ],
+            "properties": {
+                "status": "[if(parameters('enableAutoShutDown'),'Enabled','Disabled')]",
+                "taskType": "ComputeVmShutdownTask",
+                "dailyRecurrence": {
+                    "time": "[replace(parameters('authoShutDownHour'),':','')]"
+                },
+                "timeZoneId": "[parameters('autoShutDownTimeZone')]",
+                "notificationSettings": {
+                    "status": "[if(empty(parameters('autoShutDownNotificationEmail')),'Disabled','Enabled')]",
+                    "emailRecipient": "[parameters('autoShutDownNotificationEmail')]",
+                    "timeInMinutes": 30
+                },
+                "targetResourceId": "[variables('resourceIds').virtualMachine]"
+            }
+        },
+        {
+            "name": "[concat(variables('resourceNames').virtualMachine,'/DSCConfiguration')]",
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "apiVersion": "2020-12-01",
+            "location": "[parameters('location')]",
+            "tags": {
+                "displayName": "VM DSC Configuration"
+            },
+            "dependsOn": [
+                "[variables('resourceIds').virtualMachine]"
+            ],
+            "properties": {
+                "publisher": "Microsoft.Powershell",
+                "type": "DSC",
+                "typeHandlerVersion": "2.77",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "wmfVersion": "latest",
+                    "configuration": {
+                        "url": "[uri(parameters('_artifactsLocation'), concat('DSC/OpenHackConfig.zip'))]",
+                        "script": "OpenHackConfig.ps1",
+                        "function": "OpenHackConfig"
+                    }
+                },
+                "protectedSettings": {
+                    "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]",
+                    "configurationArguments": {
+                        "RunAsCredential": {
+                            "userName": "[parameters('adminUsername')]",
+                            "password": "[parameters('adminPassword')]"
+                        }
+                    }
+                }
+            }
+        }
+
+
+    ],
+    "outputs": {
+        "fqdn": {
+            "type": "string",
+            "value": "[reference(variables('resourceIds').publicIPAddress).dnsSettings.fqdn]"
+        }
+    }
+}

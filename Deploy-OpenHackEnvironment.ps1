@@ -1,0 +1,1 @@
+.\Deploy-AzTemplate.ps1 -UploadArtifacts -ResourceGroupLocation westeurope -ResourceGroupName "OpenHackEnvironment" -BuildDscPackage
