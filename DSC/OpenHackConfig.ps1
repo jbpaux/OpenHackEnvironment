@@ -12,7 +12,9 @@
    @{Name = 'cascadiacode' }
    @{Name = 'cascadiacodepl' }
    @{Name = 'microsoft-windows-terminal' }
-   @{Name = "sysinternals" }
+   @{Name = 'sysinternals' }
+   @{Name = 'istioctl'}
+   @{Name = 'azure-data-studio'}
 )
 
 Configuration OpenHackConfig
@@ -65,6 +67,7 @@ Configuration OpenHackConfig
       cChocoInstaller installChoco {
          InstallDir = 'c:\choco'
          PsDscRunAsCredential = $RunAsCredential
+         DependsOn = "[MsiPackage]WSL2Update"
       }
       
       cChocoFeature allowGlobalConfirmation {
