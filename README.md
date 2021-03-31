@@ -1,8 +1,11 @@
 # OpenHack Container - Automated development VM
 
 I've been invited to participate to MS OpenHack training about Containers/Kubernetes.
+
 I've needed to setup a development environment to run the different needed tools but was unable to do it locally.
+
 As always I prefer automation over manual VM configuration so I've created this ARM template and DSC script to deploy all needed components.
+
 
 ## Deploy the template
 
