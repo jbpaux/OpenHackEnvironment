@@ -13,8 +13,8 @@
    @{Name = 'cascadiacodepl' }
    @{Name = 'microsoft-windows-terminal' }
    @{Name = 'sysinternals' }
-   @{Name = 'istioctl'}
-   @{Name = 'azure-data-studio'}
+   @{Name = 'istioctl' }
+   @{Name = 'azure-data-studio' }
 )
 
 Configuration OpenHackConfig
@@ -28,6 +28,8 @@ Configuration OpenHackConfig
 
    Import-DscResource -ModuleName PSDscResources
    Import-DscResource -ModuleName cChoco
+   Import-DscResource -ModuleName PowerShellModule
+
    Node "localhost"
    {
       LocalConfigurationManager {
@@ -65,16 +67,16 @@ Configuration OpenHackConfig
       }
 
       cChocoInstaller installChoco {
-         InstallDir = 'c:\choco'
+         InstallDir           = 'c:\choco'
          PsDscRunAsCredential = $RunAsCredential
-         DependsOn = "[MsiPackage]WSL2Update"
+         DependsOn            = "[MsiPackage]WSL2Update"
       }
       
       cChocoFeature allowGlobalConfirmation {
 
-         FeatureName = 'allowGlobalConfirmation'
-         Ensure      = 'Present'
-         DependsOn = '[cChocoInstaller]installChoco'
+         FeatureName          = 'allowGlobalConfirmation'
+         Ensure               = 'Present'
+         DependsOn            = '[cChocoInstaller]installChoco'
          PsDscRunAsCredential = $RunAsCredential
       }
       
@@ -105,6 +107,12 @@ Configuration OpenHackConfig
          DependsOn            = @('[cChocoInstaller]installChoco', '[Registry]WSL2Default' )
          AutoUpgrade          = $True
          PsDscRunAsCredential = $RunAsCredential
+      }
+
+      PSModuleResource Az {
+         Ensure      = 'Present'
+         Module_Name = 'Az'
+         DependsOn   = '[cChocoPackageInstaller]installChoco'
       }
    }
 }
