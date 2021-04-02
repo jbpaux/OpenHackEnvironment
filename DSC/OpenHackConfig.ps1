@@ -112,8 +112,16 @@ Configuration OpenHackConfig
       PSModuleResource Az {
          Ensure      = 'Present'
          Module_Name = 'Az'
-         DependsOn   = '[cChocoPackageInstaller]installChoco'
+         DependsOn   = '[cChocoInstaller]installChoco'
       }
+
+      PSModuleResource AzureAD {
+         Ensure      = 'Present'
+         Module_Name = 'AzureAD'
+         DependsOn   = '[cChocoInstaller]installChoco'
+      }
+
+      
    }
 }
 
