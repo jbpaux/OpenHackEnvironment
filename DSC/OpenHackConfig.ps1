@@ -17,6 +17,19 @@
    @{Name = 'azure-data-studio' }
 )
 
+$vscodeextensions = @(
+'docsmsft.docs-yaml'
+'ms-dotnettools.vscode-dotnet-runtime'
+'ms-kubernetes-tools.vscode-aks-tools'
+'ms-kubernetes-tools.vscode-kubernetes-tools'
+'ms-vscode-remote.remote-containers'
+'ms-vscode-remote.remote-wsl'
+'ms-vscode.powershell'
+'ms-vscode.vscode-node-azure-pack'
+'msazurermtools.azurerm-vscode-tools'
+'redhat.vscode-yaml'
+)
+
 Configuration OpenHackConfig
 {
    param(
@@ -29,6 +42,7 @@ Configuration OpenHackConfig
    Import-DscResource -ModuleName PSDscResources
    Import-DscResource -ModuleName cChoco
    Import-DscResource -ModuleName PowerShellModule
+   Import-DscResource -ModuleName vscode
 
    Node "localhost"
    {
@@ -121,7 +135,16 @@ Configuration OpenHackConfig
          DependsOn   = '[cChocoInstaller]installChoco'
       }
 
+      foreach ($extension in $vscodeextensions) {
+         VSCodeExtension "PSExt-$extension" {
+            Name = $extension
+            Ensure = 'Present'
+            PsDscRunAsCredential = $RunAsCredential
+            DependsOn = '[cChocoPackageInstaller]installvscode'
+        }
+      }
       
+
    }
 }
 
