@@ -42,18 +42,18 @@
                 "description": "Hour for autoshutdown (24h format HH:mm)"
             }
         },
-        "autoShutDownTimeZone": {
-            "type": "string",
-            "defaultValue": "Romance Standard Time",
-            "metadata": {
-                "description": "Timezone ID to use (use Get-TimeZone to get your timezone)"
-            }
-        },
         "autoShutDownNotificationEmail": {
             "type": "string",
             "defaultValue": "",
             "metadata": {
                 "description": "Email address for autoshutdown notification (disabled if empty)"
+            }
+        },
+        "timeZoneId": {
+            "type": "string",
+            "defaultValue": "Romance Standard Time",
+            "metadata": {
+                "description": "Timezone ID to use for the VM and for autoshutdown (use Get-TimeZone to get your timezone)"
             }
         },
         "dnsprefix": {
@@ -277,7 +277,7 @@
                 "dailyRecurrence": {
                     "time": "[replace(parameters('authoShutDownHour'),':','')]"
                 },
-                "timeZoneId": "[parameters('autoShutDownTimeZone')]",
+                "timeZoneId": "[parameters('timeZoneId')]",
                 "notificationSettings": {
                     "status": "[if(empty(parameters('autoShutDownNotificationEmail')),'Disabled','Enabled')]",
                     "emailRecipient": "[parameters('autoShutDownNotificationEmail')]",
@@ -308,6 +308,9 @@
                         "url": "[uri(parameters('_artifactsLocation'), concat('DSC/OpenHackConfig.zip'))]",
                         "script": "OpenHackConfig.ps1",
                         "function": "OpenHackConfig"
+                    },
+                    "configurationArguments": {
+                        "TimeZoneId": "[parameters('timeZoneId')]"
                     }
                 },
                 "protectedSettings": {

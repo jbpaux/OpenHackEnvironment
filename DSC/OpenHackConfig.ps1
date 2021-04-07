@@ -36,13 +36,15 @@ Configuration OpenHackConfig
       [Parameter(Mandatory = $true)]
       [ValidateNotNullorEmpty()]
       [PSCredential]
-      $RunAsCredential
+      $RunAsCredential,
+      [string]$TimeZoneId='Romance Standard Time'
    )
 
    Import-DscResource -ModuleName PSDscResources
    Import-DscResource -ModuleName cChoco
    Import-DscResource -ModuleName PowerShellModule
    Import-DscResource -ModuleName vscode
+   Import-DscResource -ModuleName ComputerManagementDsc
 
    Node "localhost"
    {
@@ -143,6 +145,12 @@ Configuration OpenHackConfig
             DependsOn = '[cChocoPackageInstaller]installvscode'
         }
       }
+
+      TimeZone TimeZone
+        {
+            IsSingleInstance = 'Yes'
+            TimeZone         = $TimeZoneId
+        }
       
 
    }
