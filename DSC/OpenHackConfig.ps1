@@ -1,5 +1,5 @@
 ﻿$packages = @(
-   #   @{Name = 'wsl2'; Param = '/Retry:true' }
+   #   @{Name = 'wsl2'; Params = '/Retry:true' }
    #@{Name = 'wsl-ubuntu-2004' } #; Depends = "wsl2"
    #@{Name = 'docker-desktop' } #; Depends = "wsl2"
    @{Name = 'azure-cli' }
@@ -105,7 +105,7 @@ Configuration OpenHackConfig
          cChocoPackageInstaller "install$($package.Name)" {
             Name                 = $package.Name
             DependsOn            = $depends
-            Params               = $packages.Param
+            Params               = $package.Params
             AutoUpgrade          = $True
             PsDscRunAsCredential = $RunAsCredential
          }
