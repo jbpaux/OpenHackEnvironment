@@ -65,7 +65,7 @@ Configuration OpenHackConfig
       }
 
       MsiPackage WSL2Update {
-         ProductId = '{8D646799-DB00-4000-AE7A-756A05A4F1D8}'
+         ProductId = '{36EF257E-21D5-44F7-8451-07923A8C465E}'
          Path      = 'https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi'
          Ensure    = 'Present'
          DependsOn = "[WindowsOptionalFeature]VirtualMachinePlatform"
